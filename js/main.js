@@ -29,7 +29,7 @@ var poketool = {
   mergeArrays: function(arr1, arr2) {
    return arr1 + arr2.join();
   },
-  printBox1: function(file) {
+  compilePCBox: function(file) {
     var allBox = [];
     // Check for block type
     for (var i=0; i<10; i++) {
@@ -39,10 +39,19 @@ var poketool = {
         allBox = poketool.mergeArrays(allBox, file[i].slice(0, amt) );
       }
     }
-    allBox = new Int8Array(allBox.split(','));
-    console.log('LENGTH: ', allBox.length);
-
-
+    return new Int8Array(allBox.split(','));
+  },
+  bin2Name: function(len7Str) {
+    // should change len7Str now that this is a more universal function
+    // Requires the input to be only 7 chars in length
+    // However, this function will return the whoel boxname
+    var output = '';
+    len7Str.forEach(function(letter) {
+      if (letter > -96 && letter < -85) letter = letter + 143;
+      else letter = letter + 134;
+      output += String.fromCharCode(letter);
+    })
+    return output;
   }
 }
 
@@ -51,8 +60,25 @@ var poketool = {
 // ---------------------------------- //
 // main only starts after a file is loaded
 // parameter 'file' is the savedata that is split into 16 chunks
+var pcBox;
+var boxNames;
 function main(file) {
-  poketool.printBox1(file);
+  pcBox = poketool.compilePCBox(file);
+  boxNames = pcBox.slice(33604,33730)
+  for (var i=0; i<8; i++) {
+    var section = boxNames.slice(i*9,(i*9)+7)
+    console.log(poketool.bin2Name(section));
+  }
+
+  console.log(poketool.bin2Name( boxNames.slice(0,7) ));
+  var box1 = pcBox.slice(4,33604);
+  console.log(box1.length);
+  for (var i=0; i<30; i++) {
+    var pkm = box1.slice(i*80,(i*80)+80);
+    var pkmName = pkm.slice(8,18);
+    console.log( poketool.bin2Name(pkmName) )
+  }
+  // console.log(boxNames, boxNames.length);
 }
 
 

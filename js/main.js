@@ -26,8 +26,23 @@ var poketool = {
       main(file); // Start main now that a file is loaded
     };
   },
+  mergeArrays: function(arr1, arr2) {
+   return arr1 + arr2.join();
+  },
   printBox1: function(file) {
-    if (file[1][4084] === 5 ) console.log('yes it is');
+    var allBox = [];
+    // Check for block type
+    for (var i=0; i<10; i++) {
+      if (file[i][4084] >= 5) {
+        // If box is #13, then it's size is only 2000. Else 3969.
+        var amt = file[i][4084] === 13 ? 2000 : 3969;
+        allBox = poketool.mergeArrays(allBox, file[i].slice(0, amt) );
+      }
+    }
+    allBox = new Int8Array(allBox.split(','));
+    console.log('LENGTH: ', allBox.length);
+
+
   }
 }
 
@@ -45,7 +60,3 @@ function main(file) {
 
 
 
-// Check for block type
-// for (var i=0; i<16; i++) {
-//   console.log(file[i][4084])
-// }

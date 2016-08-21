@@ -1,3 +1,5 @@
+console.log(poketool.bin2Name( boxNames.slice(0,7) )); // prints box1 name
+
 [-68, -55, -46, -94, -1, 0, 0] BOX1
 [-64, -69, -48, -51, -1, -1, -1] FAVS
 [-62, -57, -1, -1, -1, -1, -1] HM

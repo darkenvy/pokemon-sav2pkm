@@ -28,6 +28,7 @@ var poketool = {
       };
     },
     mergeArrays: function(arr1, arr2) {
+     // returns a string, deliminated
      return arr1 + arr2.join();
     },
     bin2Str: function(len7Str) {
@@ -65,12 +66,22 @@ var poketool = {
       return poketool.bin.bin2Str(boxName);
     }
   },
-  
+
   pkm: {
-    setPkm: function(pkm, slot) {
+    setPkm: function(entirePCBox, pkm, slot) {
       // Returns a new bank of 420 slots.
       // slot is a number 0-420. 
       // pkm is the pokemon 80b data
+
+
+      var start = entirePCBox.slice(0, (slot*80)+4)
+      var middle = ',';
+      var end = entirePCBox.slice( ((slot+1)*80)+4, 33744)
+
+      var whole = ( start.join() + ',' + end.join() )
+      // console.log(tmp.length, tmp);
+      return new Int8Array( whole.split(',') );
+
     }
   }
 
@@ -85,9 +96,9 @@ var poketool = {
 var pcBox; // global scope for now. for debugging
 
 function main(file) {
-  console.log('running');
   pcBox = poketool.box.compilePCBox(file); // import save into obj
-  console.log(poketool.box.getBoxName(pcBox, 1)); // display box name x
+  // console.log(poketool.box.getBoxName(pcBox, 1)); // display box name x
+  console.log( poketool.pkm.setPkm(pcBox, null, null) );
   
   
 }

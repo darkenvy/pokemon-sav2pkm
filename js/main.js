@@ -48,14 +48,35 @@ var poketool = {
   },
 
   box: {
-    compilePCBox: function(file) {
+    extractF5Chunks: function(file) {
+      // returns chunks 0-4 in order. This is the rest of the save file
+      // NOTE: this is repeated code as with extractPCBoxes(). Can reduce
+      var chunks = [];
+      // Check for block type
+      for (var i=0; i<5; i++) {
+        // chunks in the save can be out of order. So we must order them. 0-4
+        for (var j=0; j<14; j++) {
+          if (file[j][4084] === i) {
+            chunks = poketool.bin.mergeArrays(chunks + ',', file[i]);
+            break; // once we find it, no use to keep searching. Move on
+          }
+        }
+      }
+      return new Int8Array(chunks.split(','));
+    },
+    extractPCBoxes: function(file) {
+      // Returns all boxes as one contiguous box
       var allBox = [];
       // Check for block type
-      for (var i=0; i<10; i++) {
-        if (file[i][4084] >= 5) {
-          // If box is #13, then it's size is only 2000. Else 3969.
-          var amt = file[i][4084] === 13 ? 2000 : 3969;
-          allBox = poketool.bin.mergeArrays(allBox, file[i].slice(0, amt) );
+      for (var i=5; i<14; i++) {
+        // chunks in the save can be out of order. So we must order them. 5-13
+        for (var j=0; j<14; j++) {
+          if (file[j][4084] === i) {
+            // If box is #13, then it's size is only 2000. Else 3969.
+            var amt = file[j][4084] === 13 ? 2000 : 3969;
+            allBox = poketool.bin.mergeArrays(allBox, file[j].slice(0, amt) );
+            break;
+          }
         }
       }
       return new Int8Array(allBox.split(','));
@@ -64,27 +85,53 @@ var poketool = {
       var nameList = entirePCBox.slice(33604,33730); // All box names
       var boxName = nameList.slice(boxNum*9, (boxNum*9)+7); // one box name
       return poketool.bin.bin2Str(boxName);
+    },
+    compileIntoSav: function(first5Chunks, pcBoxes) {
+      // http://furlocks-forest.net/wiki/?page=Pokemon_GBA_Save_Format
+      // var sav = poketool.bin.mergeArrays(first5Chunks.join(), pcBoxes)
+      
+
     }
   },
 
   pkm: {
-    setPkm: function(entirePCBox, pkm, slot) {
+    info: {
+      name: function(pkm) {
+        var binName = pkm.slice(8,18);
+        return poketool.bin.bin2Str(binName);
+      }
+    },
+    get: function(entirePCBox, slot) {
+      // slot is 0-419. Box unspecific
+      return entirePCBox.slice( (slot*80)+4, ((slot+1)*80)+4 )
+    },
+    set: function(entirePCBox, pkm, slot) {
       // Returns a new bank of 420 slots.
-      // slot is a number 0-420. 
+      // slot is a number 0-419. 
       // pkm is the pokemon 80b data
 
-
+      // need to make a null responce (fill with 00 if null)
       var start = entirePCBox.slice(0, (slot*80)+4)
-      var middle = ',';
       var end = entirePCBox.slice( ((slot+1)*80)+4, 33744)
 
-      var whole = ( start.join() + ',' + end.join() )
+      var whole = ( start.join() + ',' +
+                    pkm.join() + ',' + 
+                    end.join())
       // console.log(tmp.length, tmp);
       return new Int8Array( whole.split(',') );
-
     }
   }
 
+}
+
+// ----------------------------------------------------------- //
+
+
+function downloadBlob(int8Array) {
+  var blob = new Blob([int8Array], { type: 'octet/stream'})
+  var url = URL.createObjectURL(blob)
+  document.getElementById('dl-link').href = url
+  document.getElementById('dl-link').setAttribute('download', 'left.sav');
 }
 
 // ---------------------------------- //
@@ -96,17 +143,26 @@ var poketool = {
 var pcBox; // global scope for now. for debugging
 
 function main(file) {
-  pcBox = poketool.box.compilePCBox(file); // import save into obj
-  // console.log(poketool.box.getBoxName(pcBox, 1)); // display box name x
-  console.log( poketool.pkm.setPkm(pcBox, null, null) );
+  // pcBox = poketool.box.extractPCBoxes(file); // import save into obj
+  chunks = poketool.box.extractF5Chunks(file);
+  console.log(chunks);
+  // console.log(poketool.box.getBoxName(pcBox, 0)); // display box name x
+  // console.log( poketool.pkm.setPkm(pcBox, [], null) ); // set pokemon into slot
+  // var poke = poketool.pkm.getPkm(pcBox, 62) // ho-oh
+  // downloadBlob(poke);
+
+  
+
   
   
 }
 
 
 
-
-
+// for (var i=0; i<100; i++) {
+//   var poke = poketool.pkm.getPkm(pcBox, i);
+//   console.log(poketool.pkm.info.name(poke), i);
+// }
 
 // Display all box names
 // for (var i=0; i<8; i++) {

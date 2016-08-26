@@ -57,7 +57,12 @@ var poketool = {
         // chunks in the save can be out of order. So we must order them. 0-4
         for (var j=0; j<14; j++) {
           if (file[j][4084] === i) {
-            chunks = poketool.bin.mergeArrays(chunks + ',', file[i]);
+            // This is a fix. The empty array was creating an additional element
+            if (chunks.length === 0) {
+              chunks = file[i];
+            } else {
+              chunks = poketool.bin.mergeArrays(chunks + ',', file[i]);
+            }
             break; // once we find it, no use to keep searching. Move on
           }
         }
@@ -81,6 +86,18 @@ var poketool = {
       }
       return new Int8Array(allBox.split(','));
     },
+    extractSingleBox: function(pcBoxes, boxNum) {
+      // Block '8' (zero inclusive, so really 9) has a short data size
+      var singleBox;
+      if (boxNum === 8) {
+        singleBox = pcBoxes.slice(3968*boxNum, 3968*(boxNum+1));
+        singleBox = singleBox.slice(0,2000); // This is easier for now
+      } else {
+        singleBox = pcBoxes.slice(3968*boxNum, 3968*(boxNum+1));
+      }
+      return singleBox;
+
+    },
     getBoxName: function(entirePCBox, boxNum) {
       var nameList = entirePCBox.slice(33604,33730); // All box names
       var boxName = nameList.slice(boxNum*9, (boxNum*9)+7); // one box name
@@ -89,7 +106,25 @@ var poketool = {
     compileIntoSav: function(first5Chunks, pcBoxes) {
       // http://furlocks-forest.net/wiki/?page=Pokemon_GBA_Save_Format
       // var sav = poketool.bin.mergeArrays(first5Chunks.join(), pcBoxes)
-      
+      // We assume pcBoxes is already in order thanks to previous methods
+
+      var addAll32Bit = function(box) {
+        // Doing the footer slice in here
+        var newBox = box.slice(0, box.length-12);
+        return newBox.reduce(function(a, b) {return a + b;}, 0)
+      }
+      var addUpperLower16 = function(all32) {
+        // console.log(all32.buffer);
+        var new16 = new Int16Array([all32])
+        console.log(new16);
+      }
+
+      var box = poketool.box.extractSingleBox(pcBoxes, 0)
+      var pcBox32 = new Int32Array(box.buffer);
+      console.log(pcBox32.length);
+      console.log(addAll32Bit(pcBox32));
+      console.log(addUpperLower16(addAll32Bit(pcBox32)));
+
 
     }
   },
@@ -143,9 +178,10 @@ function downloadBlob(int8Array) {
 var pcBox; // global scope for now. for debugging
 
 function main(file) {
-  // pcBox = poketool.box.extractPCBoxes(file); // import save into obj
-  chunks = poketool.box.extractF5Chunks(file);
-  console.log(chunks);
+  pcBox = poketool.box.extractPCBoxes(file); // import save into obj
+  chunks05 = poketool.box.extractF5Chunks(file);
+  poketool.box.compileIntoSav(chunks05, pcBox);
+  // console.log(chunks);
   // console.log(poketool.box.getBoxName(pcBox, 0)); // display box name x
   // console.log( poketool.pkm.setPkm(pcBox, [], null) ); // set pokemon into slot
   // var poke = poketool.pkm.getPkm(pcBox, 62) // ho-oh

@@ -111,15 +111,19 @@ var poketool = {
       var addAll32Bit = function(box) {
         // Doing the footer slice in here
         var newBox = box.slice(0, box.length-12);
-        return newBox.reduce(function(a, b) {return a + b;}, 0)
+        var reduced = newBox.reduce(function(a, b) {return a + b;}, 0);
+
+        return reduced
       }
       var addUpperLower16 = function(all32) {
-        // console.log(all32.buffer);
-        var new16 = new Int16Array([all32])
-        console.log(new16);
+        console.log(all32);
+        // var new16 = new Int16Array([all32])
+        // var 
+        // return new16[0] & 0xffff;
       }
 
       var box = poketool.box.extractSingleBox(pcBoxes, 0)
+      console.log(box);
       var pcBox32 = new Int32Array(box.buffer);
       console.log(pcBox32.length);
       console.log(addAll32Bit(pcBox32));

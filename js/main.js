@@ -72,6 +72,7 @@ var poketool = {
     extractPCBoxes: function(file) {
       // Returns all boxes as one contiguous box
       var allBox = [];
+      var allBoxFooter = [];
       // Check for block type
       for (var i=5; i<14; i++) {
         // chunks in the save can be out of order. So we must order them. 5-13
@@ -80,21 +81,24 @@ var poketool = {
             // If box is #13, then it's size is only 2000. Else 3969.
             var amt = file[j][4084] === 13 ? 2000 : 3969;
             allBox = poketool.bin.mergeArrays(allBox, file[j].slice(0, amt) );
-            
+            allBoxFooter = poketool.bin.mergeArrays(allBoxFooter + ',', file[j].slice(4084, 4096) );
+
             break;
           }
         }
       }
-      return new Int8Array(allBox.split(','));
+      allBoxFooter = allBoxFooter.slice(1, allBoxFooter.length); // Fixes the off by one prefix error
+      return [new Int8Array(allBox.split(',')),
+              new Int8Array(allBoxFooter.split(','))];
     },
     extractSingleBox: function(pcBoxes, boxNum) {
       // Block '8' (zero inclusive, so really 9) has a short data size
       var singleBox;
       if (boxNum === 8) {
-        singleBox = pcBoxes.slice(3968*boxNum, 3968*(boxNum+1));
+        singleBox = pcBoxes[0].slice(3968*boxNum, 3968*(boxNum+1));
         singleBox = singleBox.slice(0,2000); // This is easier for now
       } else {
-        singleBox = pcBoxes.slice(3968*boxNum, 3968*(boxNum+1));
+        singleBox = pcBoxes[0].slice(3968*boxNum, 3968*(boxNum+1));
       }
       return singleBox;
 
@@ -108,36 +112,57 @@ var poketool = {
       // http://furlocks-forest.net/wiki/?page=Pokemon_GBA_Save_Format
       // var sav = poketool.bin.mergeArrays(first5Chunks.join(), pcBoxes)
       // We assume pcBoxes is already in order thanks to previous methods
-
-      var addAll32Bit = function(box) {
-        // Doing the footer slice in here
-        var newBox = box.slice(0, box.length-12);
-        var reduced = newBox.reduce(function(a, b) {return a + b;}, 0);
-
-        return reduced
-      }
-      var addUpperLower16 = function(all32) {
-        var a = all32 & 0xffffffff; // Truncate to 32 bits
-        var b = a & 0xffff; // get lower
-        var c = a >> 16; // get upper
-        console.log('a: ', a, 'b: ', b, 'c: ', c);
-        return b + c; // return upper + lower
+      var generatePadding = function(boxNum) {
+        var size = 128;
+        if (boxNum === 8) size = 2096;
+        return new Int8Array(size)
       }
       var generateFooter = function() {
         // chunks are 4096. Most data sections are 3968. This generates and returns the rest
         // Including the checksum
-        var finalExport = first5Chunks;
+        var addAll32Bit = function(box) {
+          // Doing the footer slice in here
+          var newBox = box.slice(0, box.length-12);
+          var reduced = newBox.reduce(function(a, b) {return a + b;}, 0);
+
+          return reduced
+        }
+        var addUpperLower16 = function(all32) {
+          var a = all32 & 0xffffffff; // Truncate to 32 bits
+          var b = a & 0xffff; // get lower
+          var c = a >> 16; // get upper
+          var total32 = b + c; // upper + lower (as 32bit int)
+          return [ total32 & 0xff ,total32 >> 8] // convert to two 16bit ints inline
+        }
+
         for (var i=0; i<9; i++) {
+          // ========== Checksum Generate ========== //
           // Declaring 4 variables just to make the checksum process easy to visualize
           var singleBox = poketool.box.extractSingleBox(pcBoxes, i)
           var singlePCBox32 = new Int32Array(singleBox.buffer);
           var grandTotal = addAll32Bit(singlePCBox32)
           var checksum = addUpperLower16(grandTotal)
+          // ======================================= //
 
-          var saveIndex = 0;
-          console.log(singleBox);
+          // ============= Update footer =========== //
+          var saveIndex = pcBoxes[1][(i*12)+8]; // Get current save
+          var footer = pcBoxes[1].slice(i*12,(i+1)*12); // Get curr Footer
+          footer[8] = saveIndex + 1; // update save (increment counter by 1)
+          footer[2] = checksum[0]; // update checksum (first 16bits)
+          footer[3] = checksum[1]; // update checksum (second 16bits)
+          // ======================================= //
+          console.log(footer);
         }
+        return footer;
       }
+
+      // var finalExport = first5Chunks;
+      // console.log(finalExport);
+      var boxOne = poketool.box.extractSingleBox(pcBoxes, 0);
+      var padding = generatePadding(0);
+      // generateFooter();
+      // poketool.bin.mergeArrays()
+
 
 
 
@@ -193,9 +218,11 @@ function downloadBlob(int8Array) {
 var pcBox; // global scope for now. for debugging
 
 function main(file) {
+  chunks05 = poketool.box.extractF5Chunks(file); // First 5 chunks. We don't modify this
   pcBox = poketool.box.extractPCBoxes(file); // import save into obj
-  chunks05 = poketool.box.extractF5Chunks(file);
   poketool.box.compileIntoSav(chunks05, pcBox);
+
+
   // console.log(chunks);
   // console.log(poketool.box.getBoxName(pcBox, 0)); // display box name x
   // console.log( poketool.pkm.setPkm(pcBox, [], null) ); // set pokemon into slot

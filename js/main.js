@@ -116,13 +116,14 @@ var poketool = {
         return reduced
       }
       var addUpperLower16 = function(all32) {
-        console.log(all32);
-        // var new16 = new Int16Array([all32])
-        // var 
-        // return new16[0] & 0xffff;
+        var a = all32 & 0xffffffff; // Truncate to 32 bits
+        var b = a & 0xffff; // get lower
+        var c = a >> 16; // get upper
+        console.log('a: ', a, 'b: ', b, 'c: ', c);
+        return b + c; // return upper + lower
       }
 
-      var box = poketool.box.extractSingleBox(pcBoxes, 0)
+      var box = poketool.box.extractSingleBox(pcBoxes, 1)
       console.log(box);
       var pcBox32 = new Int32Array(box.buffer);
       console.log(pcBox32.length);

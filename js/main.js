@@ -113,11 +113,11 @@ var poketool = {
       // var sav = poketool.bin.mergeArrays(first5Chunks.join(), pcBoxes)
       // We assume pcBoxes is already in order thanks to previous methods
       var generatePadding = function(boxNum) {
-        var size = 128;
-        if (boxNum === 8) size = 2096;
+        var size = 116; // 128 - 12 (footer)
+        if (boxNum === 8) size = 2084; // 2096 - 12 (footer) 
         return new Int8Array(size)
       }
-      var generateFooter = function() {
+      var generateFooter = function(boxNum) {
         // chunks are 4096. Most data sections are 3968. This generates and returns the rest
         // Including the checksum
         var addAll32Bit = function(box) {
@@ -135,24 +135,21 @@ var poketool = {
           return [ total32 & 0xff ,total32 >> 8] // convert to two 16bit ints inline
         }
 
-        for (var i=0; i<9; i++) {
-          // ========== Checksum Generate ========== //
-          // Declaring 4 variables just to make the checksum process easy to visualize
-          var singleBox = poketool.box.extractSingleBox(pcBoxes, i)
-          var singlePCBox32 = new Int32Array(singleBox.buffer);
-          var grandTotal = addAll32Bit(singlePCBox32)
-          var checksum = addUpperLower16(grandTotal)
-          // ======================================= //
+        // ========== Checksum Generate ========== //
+        // Declaring 4 variables just to make the checksum process easy to visualize
+        var singleBox = poketool.box.extractSingleBox(pcBoxes, boxNum)
+        var singlePCBox32 = new Int32Array(singleBox.buffer);
+        var grandTotal = addAll32Bit(singlePCBox32)
+        var checksum = addUpperLower16(grandTotal)
+        // ======================================= //
 
-          // ============= Update footer =========== //
-          var saveIndex = pcBoxes[1][(i*12)+8]; // Get current save
-          var footer = pcBoxes[1].slice(i*12,(i+1)*12); // Get curr Footer
-          footer[8] = saveIndex + 1; // update save (increment counter by 1)
-          footer[2] = checksum[0]; // update checksum (first 16bits)
-          footer[3] = checksum[1]; // update checksum (second 16bits)
-          // ======================================= //
-          console.log(footer);
-        }
+        // ============= Update footer =========== //
+        var saveIndex = pcBoxes[1][(boxNum*12)+8]; // Get current save
+        var footer = pcBoxes[1].slice(boxNum*12,(boxNum+1)*12); // Get curr Footer
+        footer[8] = saveIndex + 1; // update save (increment counter by 1)
+        footer[2] = checksum[0]; // update checksum (first 16bits)
+        footer[3] = checksum[1]; // update checksum (second 16bits)
+        // ======================================= //
         return footer;
       }
 
@@ -160,6 +157,12 @@ var poketool = {
       // console.log(finalExport);
       var boxOne = poketool.box.extractSingleBox(pcBoxes, 0);
       var padding = generatePadding(0);
+      var footer = generateFooter(0)
+      console.log(boxOne.length, padding.length, footer.length);
+      var complete = poketool.bin.mergeArrays(boxOne + ',', padding);
+      complete = poketool.bin.mergeArrays(complete + ',', footer);
+      complete = complete.split(',');
+      console.log(complete);
       // generateFooter();
       // poketool.bin.mergeArrays()
 

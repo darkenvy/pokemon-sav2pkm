@@ -80,6 +80,7 @@ var poketool = {
             // If box is #13, then it's size is only 2000. Else 3969.
             var amt = file[j][4084] === 13 ? 2000 : 3969;
             allBox = poketool.bin.mergeArrays(allBox, file[j].slice(0, amt) );
+            
             break;
           }
         }
@@ -122,13 +123,22 @@ var poketool = {
         console.log('a: ', a, 'b: ', b, 'c: ', c);
         return b + c; // return upper + lower
       }
+      var generateFooter = function() {
+        // chunks are 4096. Most data sections are 3968. This generates and returns the rest
+        // Including the checksum
+        var finalExport = first5Chunks;
+        for (var i=0; i<9; i++) {
+          // Declaring 4 variables just to make the checksum process easy to visualize
+          var singleBox = poketool.box.extractSingleBox(pcBoxes, i)
+          var singlePCBox32 = new Int32Array(singleBox.buffer);
+          var grandTotal = addAll32Bit(singlePCBox32)
+          var checksum = addUpperLower16(grandTotal)
 
-      var box = poketool.box.extractSingleBox(pcBoxes, 1)
-      console.log(box);
-      var pcBox32 = new Int32Array(box.buffer);
-      console.log(pcBox32.length);
-      console.log(addAll32Bit(pcBox32));
-      console.log(addUpperLower16(addAll32Bit(pcBox32)));
+          var saveIndex = 0;
+          console.log(singleBox);
+        }
+      }
+
 
 
     }

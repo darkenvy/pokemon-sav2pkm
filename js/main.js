@@ -158,7 +158,6 @@ var poketool = {
       var boxOne = poketool.box.extractSingleBox(pcBoxes, 0);
       var padding = generatePadding(0);
       var footer = generateFooter(0)
-      console.log(boxOne.length, padding.length, footer.length);
       var complete = poketool.bin.mergeArrays(boxOne + ',', padding);
       complete = poketool.bin.mergeArrays(complete + ',', footer);
       complete = complete.split(',');
@@ -224,37 +223,4 @@ function main(file) {
   chunks05 = poketool.box.extractF5Chunks(file); // First 5 chunks. We don't modify this
   pcBox = poketool.box.extractPCBoxes(file); // import save into obj
   poketool.box.compileIntoSav(chunks05, pcBox);
-
-
-  // console.log(chunks);
-  // console.log(poketool.box.getBoxName(pcBox, 0)); // display box name x
-  // console.log( poketool.pkm.setPkm(pcBox, [], null) ); // set pokemon into slot
-  // var poke = poketool.pkm.getPkm(pcBox, 62) // ho-oh
-  // downloadBlob(poke);
-
-  
-
-  
-  
 }
-
-
-
-// for (var i=0; i<100; i++) {
-//   var poke = poketool.pkm.getPkm(pcBox, i);
-//   console.log(poketool.pkm.info.name(poke), i);
-// }
-
-// Display all box names
-// for (var i=0; i<8; i++) {
-//   var section = boxNames.slice(i*9,(i*9)+7)
-//   console.log(poketool.bin2Str(section));
-// }
-
-// Display all pokemon
-// var allBoxes = pcBox.slice(4,33604);
-// for (var i=0; i<420; i++) {
-//   var pkm = allBoxes.slice(i*80,(i*80)+80);
-//   var pkmName = pkm.slice(8,18);
-//   console.log( poketool.bin2Str(pkmName) )
-// }

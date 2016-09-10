@@ -137,7 +137,7 @@ var poketool = {
 
         // ========== Checksum Generate ========== //
         // Declaring 4 variables just to make the checksum process easy to visualize
-        var singleBox = poketool.box.extractSingleBox(pcBoxes, boxNum)
+        var singleBox = poketool.box.extractSingleBox(pcBoxes, boxNum);
         var singlePCBox32 = new Int32Array(singleBox.buffer);
         var grandTotal = addAll32Bit(singlePCBox32)
         var checksum = addUpperLower16(grandTotal)
@@ -155,15 +155,30 @@ var poketool = {
 
       // var finalExport = first5Chunks;
       // console.log(finalExport);
-      var boxOne = poketool.box.extractSingleBox(pcBoxes, 0);
-      var padding = generatePadding(0);
-      var footer = generateFooter(0)
-      var complete = poketool.bin.mergeArrays(boxOne + ',', padding);
-      complete = poketool.bin.mergeArrays(complete + ',', footer);
-      complete = complete.split(',');
-      console.log(complete);
-      // generateFooter();
-      // poketool.bin.mergeArrays()
+
+      var generateWholeBox = function(box) {
+        var oneBox = poketool.box.extractSingleBox(pcBoxes, box);
+        var padding = generatePadding(box);
+        var footer = generateFooter(box);
+        console.log("FOOTER: ", footer);
+        var complete = poketool.bin.mergeArrays(oneBox + ',', padding);
+        // console.log("len1: ", complete.length);
+        complete = poketool.bin.mergeArrays(complete + ',', footer);
+        // console.log("len2: ", complete.length);
+        return complete;
+      }
+
+      // var finalExport = new Int8Array(generateWholeBox(0));
+      var finalExport = "";
+      for (var i=0; i<9; i++) {
+        finalExport = finalExport + generateWholeBox(i);
+        i < 8 ? finalExport = finalExport + "," : false; // Add a "," for each element except loop #9
+        var tmp = new Int8Array(finalExport.split(','));
+        console.log(tmp.length);
+      }
+      return new Int8Array(finalExport.split(','));
+
+      
 
 
 
@@ -221,6 +236,8 @@ var pcBox; // global scope for now. for debugging
 
 function main(file) {
   chunks05 = poketool.box.extractF5Chunks(file); // First 5 chunks. We don't modify this
-  pcBox = poketool.box.extractPCBoxes(file); // import save into obj
-  poketool.box.compileIntoSav(chunks05, pcBox);
+  pcBox = poketool.box.extractPCBoxes(file); // import pc boxes into obj
+  fullsave = poketool.box.compileIntoSav(chunks05, pcBox);
+  console.log(fullsave.length);
+  downloadBlob(fullsave);
 }

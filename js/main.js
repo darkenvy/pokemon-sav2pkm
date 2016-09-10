@@ -126,8 +126,7 @@ var poketool = {
           var newBox = box.slice(0, box.length-3); // was -12, now its -3. Because its a 32b int instead of a 8bit int
           console.log("newbox", newBox);
           var reduced = newBox.reduce(function(a, b) {return a + b;}, 0);
-
-          return reduced
+          return reduced;
         }
         var addUpperLower16 = function(all32) {
           console.log("all32: ", all32);
@@ -135,12 +134,13 @@ var poketool = {
           var b = a & 0xffff; // get lower
           var c = a >> 16; // get upper
           var total32 = b + c; // upper + lower (as 32bit int)
-          return [ total32 & 0xff ,total32 >> 8] // convert to two 16bit ints inline
+          return [ total32 & 0xff ,total32 >> 8]; // convert to two 16bit ints inline
         }
 
         // ========== Checksum Generate ========== //
         // Declaring 4 variables just to make the checksum process easy to visualize
         var singleBox = poketool.box.extractSingleBox(pcBoxes, boxNum);
+        // do slice here (slice off footer of 12 bytes)
         var singlePCBox32 = new Int32Array(singleBox.buffer);
         var grandTotal = addAll32Bit(singlePCBox32)
         var checksum = addUpperLower16(grandTotal)

@@ -59,9 +59,9 @@ var poketool = {
           if (file[j][4084] === i) {
             // This is a fix. The empty array was creating an additional element
             if (chunks.length === 0) {
-              chunks = file[i];
+              chunks = file[j];
             } else {
-              chunks = poketool.bin.mergeArrays(chunks + ',', file[i]);
+              chunks = poketool.bin.mergeArrays(chunks + ',', file[j]);
             }
             break; // once we find it, no use to keep searching. Move on
           }
@@ -122,12 +122,15 @@ var poketool = {
         // Including the checksum
         var addAll32Bit = function(box) {
           // Doing the footer slice in here
-          var newBox = box.slice(0, box.length-12);
+          console.log("Box", box);
+          var newBox = box.slice(0, box.length-3); // was -12, now its -3. Because its a 32b int instead of a 8bit int
+          console.log("newbox", newBox);
           var reduced = newBox.reduce(function(a, b) {return a + b;}, 0);
 
           return reduced
         }
         var addUpperLower16 = function(all32) {
+          console.log("all32: ", all32);
           var a = all32 & 0xffffffff; // Truncate to 32 bits
           var b = a & 0xffff; // get lower
           var c = a >> 16; // get upper
@@ -141,6 +144,7 @@ var poketool = {
         var singlePCBox32 = new Int32Array(singleBox.buffer);
         var grandTotal = addAll32Bit(singlePCBox32)
         var checksum = addUpperLower16(grandTotal)
+        console.log("checksum", checksum); // 115, 71 desired
         // ======================================= //
 
         // ============= Update footer =========== //
@@ -153,36 +157,25 @@ var poketool = {
         return footer;
       }
 
-      // var finalExport = first5Chunks;
-      // console.log(finalExport);
-
       var generateWholeBox = function(box) {
+        // Displayed out for visuals
         var oneBox = poketool.box.extractSingleBox(pcBoxes, box);
         var padding = generatePadding(box);
         var footer = generateFooter(box);
-        console.log("FOOTER: ", footer);
+        if (box === 8) console.log(footer, box);
         var complete = poketool.bin.mergeArrays(oneBox + ',', padding);
-        // console.log("len1: ", complete.length);
         complete = poketool.bin.mergeArrays(complete + ',', footer);
-        // console.log("len2: ", complete.length);
         return complete;
       }
 
-      // var finalExport = new Int8Array(generateWholeBox(0));
       var finalExport = "";
       for (var i=0; i<9; i++) {
         finalExport = finalExport + generateWholeBox(i);
         i < 8 ? finalExport = finalExport + "," : false; // Add a "," for each element except loop #9
         var tmp = new Int8Array(finalExport.split(','));
-        console.log(tmp.length);
       }
+      finalExport = first5Chunks + "," + finalExport; // Combine the begining with the end
       return new Int8Array(finalExport.split(','));
-
-      
-
-
-
-
     }
   },
 

@@ -1,3 +1,20 @@
+mergeTyped: function(arr1, arr2) {
+ var a = Array.prototype.slice.call(arr1);
+ var b = Array.prototype.slice.call(arr2);
+ var c = Array.prototype.concat.apply(a, b);
+ return new Uint8Array(c);
+},
+
+else {
+      console.log(
+        'section id ', sectionSlice.id, 'already exists, and this saveindex is', 
+        this.sumTypedArray(sectionSlice.saveIndex), 'instead of',
+        this.sumTypedArray(this.sections[sectionSlice.id].saveIndex),
+        '. Skipping...');
+    }
+
+
+
 console.log(poketool.bin2Name( boxNames.slice(0,7) )); // prints box1 name
 
 [-68, -55, -46, -94, -1, 0, 0] BOX1

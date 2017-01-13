@@ -36,8 +36,8 @@ function fileLoaded(arrayBuffer) {
   console.log(saveSlotA);
   console.log(saveSlotB);
 
-  // Will need to compare SlotA & B to see which is newer
 
+  // Will need to compare SlotA & B to see which is newer
 
 }
 
@@ -46,22 +46,58 @@ function fileLoaded(arrayBuffer) {
 
 // SaveSlot Object. up to 2 saveslots per game save.
 function SaveSlot(arrayBuffer, slotInt) {
-  this.sections = [];
-  this.pcBuffer;
+  this.sections = {};
 
   // Prevents error if save is only one SaveSlot big
   if (slotInt === 1 && arrayBuffer.byteLength === 65536) return;
   
   // Generate Section objects and append to SaveSlot
-  var arrayBufferTyped = new Uint8Array(arrayBuffer)
+  var arrayBufferTyped = new Uint8Array(arrayBuffer);
   for (var i=0+(slotInt*16); i<16+(slotInt*16); i++) { // 0-16 or 16-32
-    var sectionSlice = arrayBufferTyped.slice(i*4096, (i+1)*4096)
-    this.sections.push( new Section(sectionSlice) )
+    var sectionSlice = new Section( arrayBufferTyped.slice(i*4096,(i+1)*4096) )
+    // Add to sections if key doesnt exist.
+    // If key does exist, this is because saveslotA can have 2 sections from
+    // saveslotB. See furlocks-forest.net/wiki/?page=Pokemon_GBA_Save_Format
+    if (!this.sections.hasOwnProperty(sectionSlice.id) || 
+        this.sumTypedArray(sectionSlice.saveIndex) > 
+        this.sumTypedArray(this.sections[sectionSlice.id].saveIndex)
+        ) { this.sections[sectionSlice.id] = sectionSlice }
   }
+  
+  // dont pass full 4096 into it. only the coresponding size
+  // only run if initialized with data
+  if (arrayBuffer) { 
+    this.pcBuffer = this.mergeTyped(
+        this.sections['5'].data.slice(0, 3968),
+        this.sections['6'].data.slice(0, 3968),
+        this.sections['7'].data.slice(0, 3968),
+        this.sections['8'].data.slice(0, 3968),
+        this.sections['9'].data.slice(0, 3968),
+        this.sections['10'].data.slice(0, 3968),
+        this.sections['11'].data.slice(0, 3968),
+        this.sections['12'].data.slice(0, 3968),
+        this.sections['13'].data.slice(0, 2000)
+      );
+  }
+
+  // find 5-13
+
 
 }
 SaveSlot.prototype = {
-  constructor: SaveSlot
+  constructor: SaveSlot,
+  mergeTyped: function() {
+    var results = []
+    for (var i=0; i< arguments.length; i++) {
+      var each = Array.prototype.slice.call(arguments[i]);
+      results = Array.prototype.concat.apply(results, each);
+    }
+    return new Uint8Array(results);
+  },
+  sumTypedArray: function(typedArr) {
+    var arr = Array.prototype.slice.call(typedArr);
+    return arr.reduce(function(a,b) {return a+b});
+  }
 };
 
 
@@ -80,8 +116,8 @@ Section.prototype.constructor = Section;
 
 
 // One PCBuffer per SaveSlot. A PCBuffer contains all in-game PC boxes
-function PCBuffer = {
-
+function PCBuffer(pcBufferSections) {
+  this.data = pcBufferSections;
 }
 Section.prototype = new SaveSlot();
 Section.prototype.constructor = PCBuffer;

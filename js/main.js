@@ -41,6 +41,12 @@ Tools.prototype = {
   sumTypedArray: function(typedArr) {
     var arr = Array.prototype.slice.call(typedArr);
     return arr.reduce(function(a,b) {return a+b});
+  },
+  makeReadable: function(typedArr) {
+    var offset = typedArr.map(function(each) {
+      return each >= 187 ? each-122 : each-113;
+    });
+    return String.fromCharCode.apply(null, offset);
   }
 }
 
@@ -104,22 +110,43 @@ function PCBuffer(pcBufferSections) {
   this.data = pcBufferSections;
   this.boxs = {};
   if (this.data) {
-    // var nameChunk = this.data.slice(33604, 33604+126);
-    // nameChunk = nameChunk.map(function(each) {return each - 122});
-    // console.log(String.fromCharCode.apply(null, nameChunk));
+    var boxPokemonsSlice = this.data.slice(4, 33604),
+        boxNamesSlice = this.data.slice(33604, 33604+126),
+        boxWallpapersSlice = this.data.slice(33730, 33730+14);
+    for (var i=0; i<14; i++) {
+      this.boxs[i] = new Box(
+          boxPokemonsSlice.slice(i*(80*30), (i+1)*(80*30)),
+          boxNamesSlice.slice( i*9, (i+1)*9),
+          boxWallpapersSlice[i]
+        );
+    }
   }
 
-  // for (var i=0; i<14; i++) {
-
-  // }
 }
 PCBuffer.prototype = new SaveSlot();
 PCBuffer.prototype.constructor = PCBuffer;
 
 // 14 in-game PC boxes. All Boxs belong to PCBuffer.
-function Box() {}
-Box.prototype = {
-  constructor: Box
+function Box(pokemons, name, wallpaper) { 
+  this.name = name;
+  this.wallpaper = wallpaper;
+  this.pokemons = {};
+
+
+  if (pokemons) {
+    console.log(this.makeReadable(this.name));
+    for (var i=0; i<30; i++) {
+      var pkm = pokemons.slice(i*80, (i+1)*80);
+      if (pkm[28] !== 0) this.pokemons[i] = new Pokemon(pkm);
+    }
+  }
+
 }
 Box.prototype = new PCBuffer();
 Box.prototype.constructor = Box;
+
+function Pokemon(data) {
+  this.data = data;
+}
+Pokemon.prototype = new Box();
+Pokemon.prototype.constructor = Pokemon;

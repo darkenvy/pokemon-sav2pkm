@@ -47,6 +47,10 @@ Tools.prototype = {
       return each >= 187 ? each-122 : each-113;
     });
     return String.fromCharCode.apply(null, offset);
+  },
+  substructureOrder: function(personalityValue) {
+    var pv32 = new Uint32Array(personalityValue.buffer);
+    return pv32;
   }
 }
 
@@ -134,7 +138,6 @@ function Box(pokemons, name, wallpaper) {
 
 
   if (pokemons) {
-    console.log(this.makeReadable(this.name));
     for (var i=0; i<30; i++) {
       var pkm = pokemons.slice(i*80, (i+1)*80);
       if (pkm[28] !== 0) this.pokemons[i] = new Pokemon(pkm);
@@ -147,6 +150,16 @@ Box.prototype.constructor = Box;
 
 function Pokemon(data) {
   this.data = data;
+  this.personality = this.data.slice(0, 4);
+  this.otid = this.data.slice(4, 8);
+  this.nickname = this.data.slice(8, 18);
+  this.lang = this.data.slice(18, 20);
+  this.otName = this.data.slice(20, 27);
+  this.markings = this.data.slice(27, 28);
+  this.checksum = this.data.slice(28, 30);
+  this.unknown = this.data.slice(30, 32);
+  this.subData = this.data.slice(32, 80);
+  this.test = this.substructureOrder(this.personality);
 }
 Pokemon.prototype = new Box();
 Pokemon.prototype.constructor = Pokemon;
